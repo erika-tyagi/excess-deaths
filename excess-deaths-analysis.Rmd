@@ -6,7 +6,6 @@ output:
 ---
 
 ``` {r include = FALSE} 
-
 library(tidyverse)
 library(lubridate)
 library(extrafont)
@@ -29,11 +28,9 @@ URL <- "https://data.cdc.gov/api/views/qfhf-uhaa/rows.csv"
 
 # Plotting parameters  
 MAX_DATE <- "2021-01-01"
-
 ```
 
 ``` {r include = FALSE}
-
 # ------------------------------------------------------------------------------
 # PROCESS EXCESS DEATHS DATA 
 # ------------------------------------------------------------------------------
@@ -183,16 +180,13 @@ combined_total <- clean %>%
                         " more people have died in 2020 relative to previous years. ", 
                         comma(deaths_covid, 1), " (or ", percent(pct_covid, 1), 
                         ") of these deaths were directly attributed to COVID-19."))
-
 ```
 
 ``` {r include = FALSE} 
-
 # ------------------------------------------------------------------------------
 # CREATE PLOTS 
 # ------------------------------------------------------------------------------
 
-# Create plot 
 CreatePlot <- function(plotting_data) {
   p <- ggplot(
     data = plotting_data %>% 
@@ -200,7 +194,7 @@ CreatePlot <- function(plotting_data) {
     aes(x = week_end)) +
     geom_hline(yintercept = 0, size = 0.2, color = "#e3e3e3") + 
     geom_area(aes(y = diff_all), group = 1, fill = "#fec44f") +
-    geom_area(aes(y = diff_covid), group = 1,fill = "#d95f0e") +
+    geom_area(aes(y = diff_covid), group = 1, fill = "#d95f0e") +
     geom_text_repel(
       data = . %>%
         group_by(race_ethnicity) %>%
@@ -211,7 +205,7 @@ CreatePlot <- function(plotting_data) {
           label = ifelse(diff_all > 0, 
                          paste0(paste0("+", comma(diff_all, 1), "\n+", percent(pct_diff_all / 100, 1))), 
                          paste0(paste0(comma(diff_all, 1), "\n", percent(pct_diff_all / 100, 1))))), 
-      direction = "y", family = "Lato", size = 3.0, vjust = "outward", hjust = "outward") +
+      family = "Lato", size = 3.0, vjust = "outward", hjust = "outward") +
     facet_wrap(~ race_ethnicity, labeller = as_labeller(GetLabel), nrow = 1) + 
     scale_x_date(date_labels = "%b", date_breaks = "3 month") + 
     theme_minimal(base_size = 12, base_family = "Lato") + 
@@ -222,12 +216,15 @@ CreatePlot <- function(plotting_data) {
           panel.grid.minor.x = element_blank(), 
           panel.grid.major.x = element_line(size = 0.2, color = "#e3e3e3"), 
           plot.title = element_text(hjust = 0.5),
-          axis.text.y = element_blank(), ) 
+          axis.text.y = element_blank()) 
   
   return (p)
 }
-
 ```
+
+Updated: January 2021 
+
+---
 
 ### Excess deaths provide a more complete picture of the pandemic's mortality  
 
@@ -235,11 +232,12 @@ In April, [the CDC began publishing data on excess deaths](https://www.cdc.gov/n
 
 By taking historical trends into account, excess deaths provide a more complete account of the true mortality from the pandemic relative to the official count of deaths directly attributed to COVID-19. Excess deaths take into account indirect deaths from the pandemic – for example, from people who were never tested for COVID-19 or from people who were unable to access medical treatment because of the pandemic's burden on health systems. 
 
-385,286 excess deaths were reported across the United States through the end of October. Of these, only 230,547 – or just 60% – were officially recorded as directly attributed to COVID-19. A much higher share of excess deaths are attributed to COVID-19 in [states that have been conducting a large amount of testing](https://www.nytimes.com/interactive/2020/us/coronavirus-testing.html) throughout the pandemic – largely concentrated in the northeast.  
+A much higher share of excess deaths are attributed to COVID-19 in [states that have been conducting a large amount of testing](https://www.nytimes.com/interactive/2020/us/coronavirus-testing.html) throughout the pandemic – largely concentrated in the northeast. 
+
+---
 
 ``` {r echo = FALSE, warning = FALSE, results = "asis", fig.align = "center"}
-
-# https://www.r-graph-gallery.com/328-hexbin-map-of-the-usa.html
+# Source: https://www.r-graph-gallery.com/328-hexbin-map-of-the-usa.html
 
 # Load and process hexgrid geojson 
 spdf <- geojson_read("data/us_states_hexgrid.geojson",  what = "sp")
@@ -252,11 +250,11 @@ centers <- cbind.data.frame(data.frame(gCentroid(spdf, byid = TRUE), id = spdf@d
 hex_combined <- spdf_fortified %>% 
   left_join(combined_total, by = c("id" = "Jurisdiction"))
 
-# Plot hex map 
+# Plot national hex map 
 hex_combined <- hex_combined %>% 
   mutate(pct_covid_bins = cut(
     pct_covid, 
-    breaks = c(-Inf, 0.2, 0.4, 0.6, 0.8, 1.0), 
+    breaks = c(-Inf, 0.2, 0.4, 0.6, 0.8, Inf), 
     labels = c("0-20%", "20-40%", "40-60%", "60-80%", "80-100%")))
 
 ggplot() +
@@ -267,20 +265,26 @@ ggplot() +
             aes(x = x, y = y, label = id, family = "Lato")) +
   scale_fill_manual(
     values = c("#1d91c0", "#41b6c4","#7fcdbb", "#c7e9b4", "#ffffcc"), 
-    name = "\n What percent of each state's excess deaths were directly attributed to COVID-19?", 
+    name = "\n", 
     guide = guide_legend(
       keywidth = unit(26, units = "mm"), 
       label.position = "bottom", 
       title.position = "top", 
       nrow = 1)) + 
-  labs(title = "In 32 states, official COVID-19 deaths exclude more than half of all excess deaths") + 
   theme_void(base_family = "Lato") + 
-  theme(legend.position = "top", plot.title = element_text(hjust = 0.5)) 
+  labs(title = "What percent of each state's excess deaths were directly attributed to COVID-19?") + 
+  theme(legend.position = "top", 
+        plot.title = element_text(hjust = 0.5))
 ```
 
+---
+
+Relative to earlier in the pandemic, a higher share of excess deaths in the most recent wave were attributed to COVID-19. In late-March, fewer than half of all excess deaths were directly attributed to COVID-19. Even through the summer months, this share was less than 60%. By December, roughly 90% of all excess deaths were attributed to COVID-19.  
+
+---
 
 ``` {r echo = FALSE, warning = FALSE, message = FALSE, results = "asis", fig.align = "center"}
-
+# National aggregated plot 
 STATE <<- "US"
 
 us_plotting <- plotting %>% 
@@ -291,13 +295,12 @@ us_plotting <- plotting %>%
   summarise(diff_all = sum(diff_all), 
             diff_covid = sum(diff_covid)) 
 
-cat("### ", GetGeography(), "\n")
+colors <- c("COVID-19 Deaths" = "#d95f0e", "All Excess Deaths" = "#fec44f")
 
-# Create plot 
 ggplot(data = us_plotting, aes(x = week_end)) +
   geom_hline(yintercept = 0, size = 0.2, color = "#e3e3e3") + 
-  geom_area(aes(y = diff_all), group = 1, fill = "#fec44f") +
-  geom_area(aes(y = diff_covid), group = 1, fill = "#d95f0e") +
+  geom_area(aes(y = diff_all, fill = "All Excess Deaths"), group = 1) +
+  geom_area(aes(y = diff_covid, fill = "COVID-19 Deaths"), group = 1) +
   scale_x_date(date_labels = "%b", date_breaks = "3 month") + 
   geom_label(aes(x = as.Date("2020-02-27"), y = 23200, 
                  label = "There were +24,535 excess deaths\non the week ending on April 11"), 
@@ -308,38 +311,48 @@ ggplot(data = us_plotting, aes(x = week_end)) +
   geom_hline(yintercept = max(us_plotting$diff_covid), linetype = "dashed", color = "#d95f0e", size = 0.5) + 
   theme_minimal(base_size = 12, base_family = "Lato") + 
   scale_y_continuous(label = label_number_si()) + 
+  scale_fill_manual(values = colors) + 
+  labs(title = "How has the share of excess deaths directly attributed to \n COVID-19 shifted over the course of the pandemic?") + 
   theme(axis.title.x = element_blank(), 
         axis.title.y = element_blank(), 
         panel.grid.major.y = element_blank(), 
         panel.grid.minor.y = element_blank(), 
         panel.grid.minor.x = element_blank(), 
+        plot.title = element_text(hjust = 0.5), 
+        legend.position = "top", 
+        legend.title = element_blank(), 
         panel.grid.major.x = element_line(size = 0.2, color = "#e3e3e3"), 
-        plot.title.position = "plot") +
-  labs(title = "Only 60% of all excess deaths have been directly attributed to COVID-19")
-
+        plot.title.position = "plot") 
 ```
+
+---
 
 ### The pandemic continues to disproportately burden people of color 
 
-Excess deaths highlight the extent of mortality resulting from persistent and structural inequities in access to health care in the United States. Engaging with [work from public health experts on the social determinants of health](https://www.who.int/health-topics/social-determinants-of-health) is critical to better understanding the causes and consequences of these inequities. In August, [the Marshall Project put together a compelling analysis of data on excess deaths](https://www.themarshallproject.org/2020/08/21/covid-19-s-toll-on-people-of-color-is-worse-than-we-knew) showing that COVID-19's toll on people of color was much worse than we knew. This is largely inspired by their work. 
+A lower share of excess deaths were attributed to COVID-19 among Black and Hispanic communities, relative to the White population – even in the most recent wave of the pandemic. These disparities in excess deaths highlight the extent of mortality resulting from persistent and structural inequities in access to health care in the United States. 
+
+These disparities can be seen at the national level and across states – particularly among states with large Black and Hispanic populations. 
+
+
+---
 
 ``` {r echo = FALSE, warning = FALSE, fig.width = 11, fig.height = 2.5, results = "asis", fig.align = "center"}
-
+# National plot by race/ethnicity 
 cat("### ", GetGeography(), "\n")
 cat(GetText(), "\n")
 plot(CreatePlot(plotting))
-
 ```
 
-``` {r echo = FALSE, warning = FALSE, fig.width = 11, fig.height = 2.5, results = "asis", fig.align = "center"}
+---
 
-states_loop <- states_unique %>% 
+``` {r echo = FALSE, warning = FALSE, fig.width = 11, fig.height = 2.5, results = "asis", fig.align = "center"}
+#  State plots by race/ethnicity
+states_loop <- states_unique %>%
   arrange(Jurisdiction) %>%
   select(State.Abbreviation) %>%
-  filter(! State.Abbreviation == "AK") %>% 
-  pull() 
+  filter(! State.Abbreviation == "US") %>%
+  pull()
 
-# Loop over states 
 for (i in states_loop) {
   STATE <<- i
   cat("\n")
@@ -348,9 +361,11 @@ for (i in states_loop) {
   plot(CreatePlot(plotting))
   cat("\n")
 }
-
 ```
 
-### A few technical notes
-The charts above use excess deaths estimates based on [the CDC's predicted (weighted) methodology](https://www.cdc.gov/nchs/nvss/vsrr/covid19/excess_deaths.htm#techNotes), which accounts for under-reporting from jurisdictions in recent weeks. Only data through the end of October is included. [2018 American Community Survey 5-Year Estimates](https://data.census.gov/cedsci/table?q=B01001&g=0500000US48411&tid=ACSDT5Y2018.B01001) are used for the race and ethnicity representation in each state. All code is available on GitHub. 
+---
 
+### Technical notes
+The charts above use excess deaths estimates based on [the CDC's predicted (weighted) methodology](https://www.cdc.gov/nchs/nvss/vsrr/covid19/excess_deaths.htm#techNotes), which accounts for under-reporting from jurisdictions in recent weeks. Only data through the end of October is included. [2018 American Community Survey 5-Year Estimates](https://data.census.gov/cedsci/table?q=B01001&g=0500000US48411&tid=ACSDT5Y2018.B01001) are used for the race and ethnicity representation in each state. 
+
+---
